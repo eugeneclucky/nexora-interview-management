@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Nexora Consultant — Team & Interview Management
 
-## Getting Started
+A recruiting team management app for managers and callers. Managers add
+candidate profiles, manage their callers, and schedule interviews. Callers
+see the interviews assigned to them, day by day, on a live-updating
+calendar. A super admin account has read access across every manager, caller,
+profile, and interview.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router) + **React 19** + **TypeScript**, served through
+  a small custom Node server (`server.ts`) so Socket.IO can share the same
+  HTTP server.
+- **PostgreSQL** via **Prisma 6** ORM.
+- **NextAuth (Auth.js) v5** — email/password (credentials) auth, JWT sessions.
+- **Socket.IO** for real-time updates (new/updated interviews, profiles,
+  callers push instantly to everyone who should see them).
+- **Tailwind CSS v4** with a hand-rolled component kit (button, card, dialog,
+  toast, etc.) and full light/dark theming via `next-themes`.
+- **react-big-calendar** + `date-fns-tz` for day/week/month/agenda calendar
+  views with proper timezone handling (default: **America/Chicago / CST**).
+- Local disk storage for uploaded resumes (PDF/Word), served through an
+  authenticated API route.
+
+## Getting started (local development)
+
+Requirements: Node 20+, Docker (for Postgres).
 
 ```bash
+# 1. Install dependencies
+npm install
+
+# 2. Start Postgres (Docker)
+docker compose up -d
+
+# 3. Copy the env file and adjust as needed (defaults already match docker-compose.yml)
+cp .env.example .env
+
+# 4. Run migrations
+npx prisma migrate dev
+
+# 5. Seed the super admin account
+#    Uses SUPER_ADMIN_EMAIL / SUPER_ADMIN_PASSWORD / SUPER_ADMIN_NAME if set,
+#    otherwise defaults to admin@example.com / ChangeMe123!
+npm run db:seed
+
+# 6. Start the dev server (Next.js + Socket.IO on one process)
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app is served at http://localhost:3000. Sign up as a **Manager** or
+**Caller** — callers sign up unassigned, and a manager (Manager → Callers →
+"Unassigned callers") or the super admin (Admin → Callers) claims/assigns
+them to a team afterward. The super admin account created by the seed
+script can see and manage everything.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+See `.env.example`. Key ones:
 
-## Learn More
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | Postgres connection string |
+| `NEXTAUTH_SECRET` | Random secret used to sign session JWTs — **change this in production** |
+| `NEXTAUTH_URL` | Public URL of the app |
+| `DEFAULT_TIMEZONE` | Fallback timezone for new accounts (default `America/Chicago`) |
+| `UPLOAD_DIR` | Where resume uploads are stored on disk |
 
-To learn more about Next.js, take a look at the following resources:
+## Production (self-hosted)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This app is designed to be self-hosted (a single Node process, not
+Vercel/serverless) since it uses local disk for resume storage and a
+real Socket.IO server for live updates.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run build
+NODE_ENV=production npm run start
+```
 
-## Deploy on Vercel
+Put a reverse proxy (Caddy/Nginx) in front for TLS, and make sure
+`UPLOAD_DIR` points at a persistent volume if you're running in a
+container — the `uploads/` directory (and the Postgres data volume in
+`docker-compose.yml`) must survive redeploys.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Roles
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Manager** — adds/edits/deletes candidate profiles, claims and manages
+  their own callers, and schedules interviews (job description, resume,
+  duration, meeting link, company, timezone-aware time). Customizes their
+  own interview status pipeline (Manager → Settings). Sees only their own
+  data.
+- **Caller** — signs up unassigned, then is claimed by a manager or admin.
+  Sees interviews assigned to them (today's list + a day/week/month
+  calendar), can view candidate/interview details and move an interview
+  through their manager's status pipeline.
+- **Super Admin** — full visibility and control across every manager,
+  caller, profile, and interview: can edit/delete any of them, and reassign
+  a caller to a different manager. There's no sign-up path for this role;
+  it's created via the seed script (`npm run db:seed`).
+
+## Useful scripts
+
+```bash
+npm run dev         # Next.js + Socket.IO dev server
+npm run build        # Production build
+npm run start         # Production server (run build first)
+npm run lint          # ESLint
+npm run db:migrate    # Prisma migrate dev
+npm run db:seed       # Seed the super admin account
+npm run db:studio     # Prisma Studio (browse the DB)
+```

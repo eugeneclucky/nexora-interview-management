@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: team_management_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: team_admin
+      POSTGRES_PASSWORD: team_password
+      POSTGRES_DB: team_management
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U team_admin -d team_management"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:

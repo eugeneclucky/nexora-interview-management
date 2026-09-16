@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  MANAGER
+  CALLER
+}
+
+enum StepKind {
+  ACTIVE
+  CANCELLED
+  NO_SHOW
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  phone        String?
+  role         Role
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Manager <-> Caller relation (self relation)
+  managerId String?
+  manager   User?   @relation("ManagerCallers", fields: [managerId], references: [id], onDelete: Cascade)
+  callers   User[]  @relation("ManagerCallers")
+
+  settings         UserSettings?
+  profilesAdded    CandidateProfile[] @relation("ProfileAddedBy")
+  interviewsCreated Interview[]       @relation("InterviewCreatedBy")
+  interviewsAssigned Interview[]      @relation("InterviewAssignedCaller")
+  activityLogs     ActivityLog[]
+  statusSteps      StatusStep[]
+  blockedSlots     BlockedSlot[]      @relation("CallerBlockedSlots")
+
+  @@index([managerId])
+  @@index([role])
+}
+
+model UserSettings {
+  id                String  @id @default(cuid())
+  userId            String  @unique
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  defaultTimezone   String  @default("America/Chicago")
+  secondaryTimezone String?
+  theme             String  @default("system")
+  emailReminders    Boolean @default(true)
+  updatedAt         DateTime @updatedAt
+}
+
+model CandidateProfile {
+  id           String    @id @default(cuid())
+  name         String
+  email        String?
+  phone        String?
+  address      String?
+  city         String?
+  state        String?
+  zip          String?
+  dob          DateTime?
+  ssnLast4     String?
+  linkedinUrl  String?
+  resumeUrl    String?
+  resumeName   String?
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  managerId String
+  manager   User   @relation("ProfileAddedBy", fields: [managerId], references: [id], onDelete: Cascade)
+
+  interviews Interview[]
+
+  @@index([managerId])
+}
+
+// Managers define their own ordered interview pipeline ("First step", "Second
+// step", ...). CANCELLED / NO_SHOW are fixed terminal steps every manager
+// gets by default (renameable, but not reorderable/deletable). The
+// active step with the highest `order` is treated as "completed".
+model StatusStep {
+  id                String   @id @default(cuid())
+  managerId         String
+  manager           User     @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  order             Int
+  label             String
+  kind              StepKind @default(ACTIVE)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  interviews Interview[]
+
+  @@unique([managerId, order])
+  @@index([managerId])
+}
+
+model Interview {
+  id               String   @id @default(cuid())
+  eventName        String?
+  jobDescription   String
+  companyName      String
+  companyWebsite   String?
+  meetingLink      String?
+  meetingPlatform  String?
+  interviewTime    DateTime
+  durationMinutes  Int      @default(30)
+  timezone         String   @default("America/Chicago")
+  resumeUrl        String?
+  resumeName       String?
+  notes            String?
+  feedback         String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  profileId String
+  profile   CandidateProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  managerId String
+  manager   User   @relation("InterviewCreatedBy", fields: [managerId], references: [id], onDelete: Cascade)
+
+  callerId String?
+  caller   User?   @relation("InterviewAssignedCaller", fields: [callerId], references: [id])
+
+  statusStepId String
+  statusStep   StatusStep @relation(fields: [statusStepId], references: [id])
+
+  @@index([managerId])
+  @@index([callerId])
+  @@index([interviewTime])
+  @@index([profileId])
+  @@index([statusStepId])
+}
+
+// A caller marks a time range on their own calendar as unavailable. Managers
+// are blocked from scheduling an interview with that caller inside the range.
+model BlockedSlot {
+  id        String   @id @default(cuid())
+  callerId  String
+  caller    User     @relation("CallerBlockedSlots", fields: [callerId], references: [id], onDelete: Cascade)
+  startTime DateTime
+  endTime   DateTime
+  reason    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([callerId])
+  @@index([startTime])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  entity    String
+  entityId  String?
+  meta      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
