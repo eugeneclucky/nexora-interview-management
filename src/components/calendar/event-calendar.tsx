@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Calendar, dateFnsLocalizer, Views, type View, type SlotInfo } from "react-big-calendar";
 import withDragAndDrop, { type EventInteractionArgs } from "react-big-calendar/lib/addons/dragAndDrop";
-import { format, parse, startOfWeek, getDay } from "date-fns";
+import { format, parse, startOfWeek, endOfWeek, getDay, isWithinInterval, isSameDay } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { toZonedTime } from "date-fns-tz";
 import type { Interview, BlockedSlot } from "@/lib/types";
@@ -62,6 +62,48 @@ export function EventCalendar({
 }) {
   const [view, setView] = useState<View>(defaultView);
   const [date, setDate] = useState(new Date());
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Land on the current time already centered in view (Day/Week only, and
+  // only when the visible range actually includes today) instead of
+  // defaulting to midnight-at-the-top and making users scroll to find "now".
+  // Re-runs when navigating back to today (e.g. the Today button) too, not
+  // just on first mount.
+  useEffect(() => {
+    if (view !== Views.DAY && view !== Views.WEEK) return;
+
+    const includesToday =
+      view === Views.DAY
+        ? isSameDay(date, new Date())
+        : isWithinInterval(new Date(), {
+            start: startOfWeek(date, { locale: enUS }),
+            end: endOfWeek(date, { locale: enUS }),
+          });
+    if (!includesToday) return;
+
+    const centerOnNow = () => {
+      const content = containerRef.current?.querySelector<HTMLElement>(".rbc-time-content");
+      if (!content) return;
+      const zonedNow = toZonedTime(new Date(), timezone);
+      const minutesNow = zonedNow.getHours() * 60 + zonedNow.getMinutes();
+      const targetTop = (content.scrollHeight * minutesNow) / 1440 - content.clientHeight / 2;
+      content.scrollTop = Math.max(0, targetTop);
+    };
+
+    // Switching views (e.g. Week -> Day) remounts react-big-calendar's
+    // internal time grid, which re-measures its own layout shortly after and
+    // resets scrollTop back to 0 in the process -- setting it once, right
+    // away, gets silently clobbered by that. Its remeasurement timing isn't
+    // something we control, so re-apply a few times over the next moment
+    // rather than racing a single retry against it.
+    centerOnNow();
+    const raf = requestAnimationFrame(centerOnNow);
+    const timeout = setTimeout(centerOnNow, 100);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timeout);
+    };
+  }, [view, date, timezone]);
 
   const events = useMemo<CalendarEvent[]>(() => {
     const interviewEvents: CalendarEvent[] = interviews.map((interview) => {
@@ -102,7 +144,7 @@ export function EventCalendar({
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl">
+    <div ref={containerRef} className="overflow-x-auto rounded-xl">
       <DnDCalendar
         localizer={localizer}
         events={events}
