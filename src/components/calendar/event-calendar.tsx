@@ -171,6 +171,14 @@ export function EventCalendar({
         endAccessor="end"
         view={view}
         date={date}
+        // Without this, react-big-calendar's own "current time" indicator
+        // line and "today" highlighting default to the raw browser-local
+        // clock, entirely bypassing the timezone this calendar is otherwise
+        // drawn in -- so it wouldn't move (or could even mark the wrong day)
+        // when the configured timezone differs from the browser's, or
+        // changes. Route it through the same fake-local coordinate trick
+        // used for event positions so "now" lines up with everything else.
+        getNow={() => toZonedTime(new Date(), timezone)}
         onView={(v) => setView(v)}
         onNavigate={(newDate: Date) => setDate(newDate)}
         views={[Views.DAY, Views.WEEK, Views.MONTH, Views.AGENDA]}
