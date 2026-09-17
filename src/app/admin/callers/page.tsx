@@ -2,8 +2,9 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Mail, Phone, Trash2, Pencil, Check, Loader2 } from "lucide-react";
+import { Mail, Phone, Send, Trash2, Pencil, Check, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useCallers } from "@/hooks/use-callers";
@@ -138,6 +139,16 @@ function AdminCallersInner() {
               {caller.phone && (
                 <p className="flex items-center gap-2">
                   <Phone className="h-3.5 w-3.5" /> {caller.phone}
+                </p>
+              )}
+              {caller.telegramUsername && (
+                <p className="flex items-center gap-2">
+                  <Send className="h-3.5 w-3.5" /> @{caller.telegramUsername}
+                  {caller.telegramLinked ? (
+                    <Badge variant="success">Linked</Badge>
+                  ) : (
+                    <Badge variant="warning">Not linked</Badge>
+                  )}
                 </p>
               )}
             </div>

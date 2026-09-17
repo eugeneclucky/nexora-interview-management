@@ -66,6 +66,56 @@ See `.env.example`. Key ones:
 | `DEFAULT_TIMEZONE` | Fallback timezone for new accounts (default `America/Chicago`) |
 | `UPLOAD_DIR` | Where resume uploads are stored on disk |
 
+## Telegram interview reminders
+
+Callers can add a Telegram username at signup (or later in Settings) to get a
+DM 30 and 10 minutes before each interview they're assigned to.
+
+### 1. Create the bot
+
+Telegram bots can only be created interactively from your own Telegram
+account — this can't be automated:
+
+1. Open a chat with [@BotFather](https://t.me/BotFather) and send `/newbot`.
+2. Name it **Nexora Bot** when asked for a display name.
+3. Pick a username ending in `bot`, e.g. `NexoraConsultantBot`.
+4. BotFather replies with an API token — save it for step 2.
+5. Set the bot's avatar to match the site: send `/setuserpic`, pick the bot,
+   and upload `public/avatar.png` from this repo.
+
+### 2. Configure the app
+
+Add to `.env` (see `.env.example`):
+
+```bash
+TELEGRAM_BOT_TOKEN="<token from BotFather>"
+TELEGRAM_BOT_USERNAME="NexoraConsultantBot"          # no "@"
+NEXT_PUBLIC_TELEGRAM_BOT_USERNAME="NexoraConsultantBot"
+TELEGRAM_WEBHOOK_SECRET="<any random string>"
+```
+
+Restart the app so the reminder scheduler picks up the token.
+
+### 3. Point Telegram at the webhook
+
+The app must be reachable over HTTPS at a public URL (use `ngrok` or similar
+for local testing). Register the webhook once:
+
+```bash
+curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
+  -d "url=$NEXTAUTH_URL/api/telegram/webhook" \
+  -d "secret_token=$TELEGRAM_WEBHOOK_SECRET"
+```
+
+### How linking works
+
+A caller enters their Telegram `@username` in the signup form or Settings.
+Telegram never lets a bot message a user first, so the caller must also open
+the bot (`https://t.me/<TELEGRAM_BOT_USERNAME>`) and send `/start`. The
+webhook matches the sender's username against the account and stores its
+chat ID; Settings then shows a **Linked** badge. Reminders only go out to
+callers who have completed this step.
+
 ## Production (self-hosted)
 
 This app is designed to be self-hosted (a single Node process, not

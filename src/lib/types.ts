@@ -41,6 +41,8 @@ export type Caller = {
   name: string;
   email: string;
   phone: string | null;
+  telegramUsername?: string | null;
+  telegramLinked?: boolean;
   managerId?: string | null;
   createdAt: string;
   manager?: UserRef;

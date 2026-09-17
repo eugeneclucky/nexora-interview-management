@@ -61,6 +61,19 @@ export default function CallerCalendarPage() {
     }
   }
 
+  async function moveBlock(block: BlockedSlot, start: Date, end: Date) {
+    try {
+      await apiFetch(`/api/blocked-slots/${block.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ startTime: start.toISOString(), endTime: end.toISOString() }),
+      });
+      pushToast("success", "Blocked time moved.");
+      refreshSlots();
+    } catch (err) {
+      pushToast("error", err instanceof Error ? err.message : "Failed to move blocked time");
+    }
+  }
+
   const blockDialogOpen = blockDialogRange !== null;
   const blockDialogInitial =
     blockDialogRange && blockDialogRange !== "manual" ? blockDialogRange : undefined;
@@ -96,6 +109,7 @@ export default function CallerCalendarPage() {
           onSelectBlockedSlot={setSelectedBlock}
           selectable
           onSelectSlot={(start, end) => setBlockDialogRange({ start, end })}
+          onMoveBlockedSlot={moveBlock}
         />
       </Card>
 

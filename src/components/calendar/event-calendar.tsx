@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Calendar, dateFnsLocalizer, Views, type View, type SlotInfo } from "react-big-calendar";
+import withDragAndDrop, { type EventInteractionArgs } from "react-big-calendar/lib/addons/dragAndDrop";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { toZonedTime } from "date-fns-tz";
@@ -22,6 +23,11 @@ type CalendarEvent =
   | { id: string; title: string; start: Date; end: Date; kind: "interview"; interview: Interview }
   | { id: string; title: string; start: Date; end: Date; kind: "block"; block: BlockedSlot };
 
+// Defined once at module scope -- wrapping Calendar inside the component body
+// would recreate the wrapped component (and remount the whole calendar) on
+// every render.
+const DnDCalendar = withDragAndDrop<CalendarEvent>(Calendar);
+
 export function EventCalendar({
   interviews,
   blockedSlots,
@@ -31,6 +37,12 @@ export function EventCalendar({
   onSelectBlockedSlot,
   selectable,
   onSelectSlot,
+  /** Dragging/resizing an interview event calls this with its new start/end
+   * (UTC). Only provided where the viewer is allowed to move interviews they
+   * scheduled (managers), not just view them (callers). */
+  onMoveEvent,
+  /** Same, for a caller dragging/resizing their own blocked-time event. */
+  onMoveBlockedSlot,
   defaultView = Views.WEEK,
 }: {
   interviews: Interview[];
@@ -44,6 +56,8 @@ export function EventCalendar({
   onSelectBlockedSlot?: (block: BlockedSlot) => void;
   selectable?: boolean;
   onSelectSlot?: (start: Date, end: Date) => void;
+  onMoveEvent?: (interview: Interview, start: Date, end: Date) => void;
+  onMoveBlockedSlot?: (block: BlockedSlot, start: Date, end: Date) => void;
   defaultView?: View;
 }) {
   const [view, setView] = useState<View>(defaultView);
@@ -77,9 +91,19 @@ export function EventCalendar({
     return [...interviewEvents, ...blockEvents];
   }, [interviews, blockedSlots, timezone, showCallerOnBlocks]);
 
+  const canDrag = (event: CalendarEvent) =>
+    event.kind === "interview" ? Boolean(onMoveEvent) : Boolean(onMoveBlockedSlot);
+
+  function handleEventChange({ event, start, end }: EventInteractionArgs<CalendarEvent>) {
+    const utcStart = calendarDateToUtc(new Date(start), timezone);
+    const utcEnd = calendarDateToUtc(new Date(end), timezone);
+    if (event.kind === "interview") onMoveEvent?.(event.interview, utcStart, utcEnd);
+    else onMoveBlockedSlot?.(event.block, utcStart, utcEnd);
+  }
+
   return (
     <div className="overflow-x-auto rounded-xl">
-      <Calendar
+      <DnDCalendar
         localizer={localizer}
         events={events}
         startAccessor="start"
@@ -109,6 +133,11 @@ export function EventCalendar({
           if (event.kind === "interview") onSelectEvent?.(event.interview);
           else onSelectBlockedSlot?.(event.block);
         }}
+        draggableAccessor={canDrag}
+        resizableAccessor={canDrag}
+        resizable={Boolean(onMoveEvent || onMoveBlockedSlot)}
+        onEventDrop={handleEventChange}
+        onEventResize={handleEventChange}
         eventPropGetter={(event: CalendarEvent) => {
           if (event.kind === "block") {
             return {

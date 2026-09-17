@@ -5,6 +5,7 @@ import next from "next";
 import { Server } from "socket.io";
 import { prisma } from "@/lib/prisma";
 import { setIO, managerRoom, ADMIN_ROOM } from "@/lib/socket";
+import { startReminderScheduler } from "@/lib/reminder-scheduler";
 
 const dev = process.env.NODE_ENV !== "production";
 const port = Number(process.env.PORT) || 3000;
@@ -44,5 +45,6 @@ app.prepare().then(() => {
 
   httpServer.listen(port, () => {
     console.log(`> Ready on http://localhost:${port}`);
+    startReminderScheduler();
   });
 });

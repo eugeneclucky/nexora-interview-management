@@ -14,7 +14,15 @@ type Settings = {
 
 type SettingsResponse = {
   settings: Settings;
-  user?: { id: string; name: string; email: string; phone: string | null; role: string };
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string | null;
+    role: string;
+    telegramUsername: string | null;
+    telegramLinked: boolean;
+  };
 };
 
 export function useSettings() {
