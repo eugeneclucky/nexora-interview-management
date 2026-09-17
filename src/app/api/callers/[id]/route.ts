@@ -61,9 +61,14 @@ export async function PATCH(
         { status: 403 }
       );
     }
-    const newManager = await prisma.user.findFirst({
-      where: { id: data.managerId, role: "MANAGER" },
-    });
+    // A super admin assigning a caller to themself (the same "claim" flow a
+    // manager uses) targets their own id, whose role is SUPER_ADMIN, not
+    // MANAGER -- allow that specific case without requiring a MANAGER row.
+    const isSelfAssignBySuperAdmin =
+      session.user.role === "SUPER_ADMIN" && data.managerId === session.user.id;
+    const newManager = isSelfAssignBySuperAdmin
+      ? true
+      : await prisma.user.findFirst({ where: { id: data.managerId, role: "MANAGER" } });
     if (!newManager) {
       return NextResponse.json({ error: "Selected manager was not found." }, { status: 400 });
     }

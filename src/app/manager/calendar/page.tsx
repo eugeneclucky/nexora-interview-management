@@ -23,6 +23,7 @@ export default function ManagerCalendarPage() {
   const { slots } = useBlockedSlots({ mine: true });
   const { timezone } = useSettings();
   const [selected, setSelected] = useState<Interview | null>(null);
+  const [editing, setEditing] = useState<Interview | null>(null);
   const [selectedBlock, setSelectedBlock] = useState<BlockedSlot | null>(null);
   const [newSlot, setNewSlot] = useState<Date | null>(null);
   const pushToast = useToast();
@@ -38,6 +39,19 @@ export default function ManagerCalendarPage() {
       refresh();
     } catch (err) {
       pushToast("error", err instanceof Error ? err.message : "Failed to update status");
+    }
+  }
+
+  async function deleteInterview(interview: Interview) {
+    if (!confirm(`Delete the interview with ${interview.profile.name}? This can't be undone.`))
+      return;
+    try {
+      await apiFetch(`/api/interviews/${interview.id}`, { method: "DELETE" });
+      pushToast("success", "Interview deleted.");
+      setSelected(null);
+      refresh();
+    } catch (err) {
+      pushToast("error", err instanceof Error ? err.message : "Failed to delete interview");
     }
   }
 
@@ -76,6 +90,36 @@ export default function ManagerCalendarPage() {
             timezone={timezone}
             canUpdateStatus
             onStatusChange={(stepId) => updateStatus(selected.id, stepId)}
+            onEdit={() => {
+              setEditing(selected);
+              setSelected(null);
+            }}
+            onDelete={() => deleteInterview(selected)}
+          />
+        )}
+      </Dialog>
+
+      <Dialog
+        open={!!editing}
+        onClose={() => setEditing(null)}
+        title="Edit interview"
+        className="max-w-2xl"
+      >
+        {editing && (
+          <InterviewForm
+            profiles={profiles}
+            callers={callers}
+            initial={editing}
+            submitLabel="Save changes"
+            onSubmit={async (payload) => {
+              await apiFetch(`/api/interviews/${editing.id}`, {
+                method: "PATCH",
+                body: JSON.stringify(payload),
+              });
+              pushToast("success", "Interview updated.");
+              setEditing(null);
+              refresh();
+            }}
           />
         )}
       </Dialog>

@@ -13,6 +13,8 @@ import {
   ChevronUp,
   ExternalLink,
   Clock,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { Badge, stepVariant } from "@/components/ui/badge";
 import { Select } from "@/components/ui/input";
@@ -27,11 +29,15 @@ export function InterviewRow({
   timezone,
   canUpdateStatus,
   onStatusChange,
+  onEdit,
+  onDelete,
 }: {
   interview: Interview;
   timezone: string;
   canUpdateStatus?: boolean;
   onStatusChange?: (statusStepId: string) => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const { steps } = useStatusSteps(interview.managerId);
@@ -45,8 +51,16 @@ export function InterviewRow({
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setExpanded((v) => !v)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setExpanded((v) => !v);
+          }
+        }}
         className="w-full flex flex-col sm:flex-row sm:items-center gap-3 p-4 text-left cursor-pointer hover:bg-muted/50"
       >
         <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -74,13 +88,43 @@ export function InterviewRow({
             </p>
           </div>
           <Badge variant={badgeVariant}>{interview.statusStep.label}</Badge>
+          {(onEdit || onDelete) && (
+            <div className="flex items-center gap-1">
+              {onEdit && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit();
+                  }}
+                  className="p-1.5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                  aria-label="Edit interview"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  className="p-1.5 rounded-md text-muted-foreground hover:bg-danger/10 hover:text-danger cursor-pointer"
+                  aria-label="Delete interview"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          )}
           {expanded ? (
             <ChevronUp className="h-4 w-4 text-muted-foreground" />
           ) : (
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           )}
         </div>
-      </button>
+      </div>
 
       {expanded && (
         <div className="border-t border-border p-4 pt-3 grid sm:grid-cols-2 gap-4 text-sm">

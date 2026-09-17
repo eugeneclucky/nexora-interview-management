@@ -153,7 +153,10 @@ export function InterviewForm({
       const utcInstant = fromZonedTime(values.interviewLocal, values.timezone);
       await onSubmit({
         profileId: values.profileId,
-        callerId: values.callerId || undefined,
+        // "" (not undefined) so editing can explicitly clear an assigned
+        // caller back to unassigned -- an omitted key is indistinguishable
+        // from "leave the existing caller alone" once JSON-serialized.
+        callerId: values.callerId,
         eventName: values.eventName || undefined,
         jobDescription: values.jobDescription,
         companyName: values.companyName,
@@ -339,15 +342,9 @@ export function InterviewForm({
           resumeUrl={values.resumeUrl}
           resumeName={values.resumeName}
           onChange={(val) => {
-            if (val) {
-              resumeSourceRef.current = "manual";
-              set("resumeUrl", val.resumeUrl);
-              set("resumeName", val.resumeName);
-            } else {
-              resumeSourceRef.current = "auto";
-              set("resumeUrl", selectedProfile?.resumeUrl ?? "");
-              set("resumeName", selectedProfile?.resumeName ?? "");
-            }
+            resumeSourceRef.current = "manual";
+            set("resumeUrl", val?.resumeUrl ?? "");
+            set("resumeName", val?.resumeName ?? "");
           }}
         />
         <p className="mt-1 text-xs text-muted-foreground">

@@ -5,11 +5,18 @@ import Link from "next/link";
 import { UserSquare2, Headset, CalendarClock, CheckCircle2, CalendarPlus, Users2 } from "lucide-react";
 import { StatCard } from "@/components/stat-card";
 import { InterviewRow } from "@/components/interviews/interview-row";
+import { InterviewForm } from "@/components/interviews/interview-form";
+import { Dialog } from "@/components/ui/dialog";
 import { buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useDashboardStats } from "@/hooks/use-dashboard-stats";
 import { useInterviews } from "@/hooks/use-interviews";
+import { useProfiles } from "@/hooks/use-profiles";
+import { useCallers } from "@/hooks/use-callers";
 import { useSettings } from "@/hooks/use-settings";
+import { useToast } from "@/components/providers/toast-provider";
+import { apiFetch } from "@/lib/api";
+import type { Interview } from "@/lib/types";
 
 export default function ManagerDashboardPage() {
   const { stats } = useDashboardStats({ mine: true });
@@ -18,9 +25,25 @@ export default function ManagerDashboardPage() {
   // Date().toISOString() on every render was creating a new `filters` value
   // each time, which retriggered the fetch effect in an infinite loop.
   const [from] = useState(() => new Date().toISOString());
-  const { interviews } = useInterviews({ from, mine: true });
+  const { interviews, refresh } = useInterviews({ from, mine: true });
+  const { profiles } = useProfiles({ mine: true });
+  const { callers } = useCallers({ mine: true });
+  const [editing, setEditing] = useState<Interview | null>(null);
+  const pushToast = useToast();
 
   const upcoming = interviews.slice(0, 6);
+
+  async function deleteInterview(interview: Interview) {
+    if (!confirm(`Delete the interview with ${interview.profile.name}? This can't be undone.`))
+      return;
+    try {
+      await apiFetch(`/api/interviews/${interview.id}`, { method: "DELETE" });
+      pushToast("success", "Interview deleted.");
+      refresh();
+    } catch (err) {
+      pushToast("error", err instanceof Error ? err.message : "Failed to delete interview");
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -68,10 +91,37 @@ export default function ManagerDashboardPage() {
               key={interview.id}
               interview={interview}
               timezone={timezone}
+              onEdit={() => setEditing(interview)}
+              onDelete={() => deleteInterview(interview)}
             />
           ))}
         </div>
       </Card>
+
+      <Dialog
+        open={!!editing}
+        onClose={() => setEditing(null)}
+        title="Edit interview"
+        className="max-w-2xl"
+      >
+        {editing && (
+          <InterviewForm
+            profiles={profiles}
+            callers={callers}
+            initial={editing}
+            submitLabel="Save changes"
+            onSubmit={async (payload) => {
+              await apiFetch(`/api/interviews/${editing.id}`, {
+                method: "PATCH",
+                body: JSON.stringify(payload),
+              });
+              pushToast("success", "Interview updated.");
+              setEditing(null);
+              refresh();
+            }}
+          />
+        )}
+      </Dialog>
     </div>
   );
 }
