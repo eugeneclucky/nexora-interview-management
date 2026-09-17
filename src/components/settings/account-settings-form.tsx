@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import { Loader2, Save } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input, Label, Select } from "@/components/ui/input";
 import { useSettings } from "@/hooks/use-settings";
 import { useToast } from "@/components/providers/toast-provider";
 import { apiFetch } from "@/lib/api";
 import { COMMON_TIMEZONES } from "@/lib/timezones";
+
+const telegramBotUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
 
 export function AccountSettingsForm({
   timezoneDescription,
@@ -22,6 +25,7 @@ export function AccountSettingsForm({
   const [emailReminders, setEmailReminders] = useState(true);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [telegramUsername, setTelegramUsername] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -32,6 +36,7 @@ export function AccountSettingsForm({
     if (user) {
       setName(user.name);
       setPhone(user.phone ?? "");
+      setTelegramUsername(user.telegramUsername ?? "");
     }
   }, [settings, user]);
 
@@ -46,6 +51,7 @@ export function AccountSettingsForm({
           emailReminders,
           name,
           phone,
+          telegramUsername,
         }),
       });
       pushToast("success", "Settings saved.");
@@ -108,7 +114,7 @@ export function AccountSettingsForm({
         <CardHeader>
           <CardTitle>Notifications</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <label className="flex items-center gap-3 text-sm cursor-pointer">
             <input
               type="checkbox"
@@ -118,6 +124,47 @@ export function AccountSettingsForm({
             />
             Email me reminders about upcoming interviews
           </label>
+
+          {user?.role === "CALLER" && (
+            <div className="pt-2 border-t border-border space-y-2">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="telegram" className="mb-0">
+                  Telegram username
+                </Label>
+                {user.telegramLinked ? (
+                  <Badge variant="success">Linked</Badge>
+                ) : (
+                  <Badge variant="warning">Not linked</Badge>
+                )}
+              </div>
+              <Input
+                id="telegram"
+                value={telegramUsername}
+                onChange={(e) => setTelegramUsername(e.target.value)}
+                placeholder="https://t.me/nexcessillion or @nexcessillion"
+              />
+              <p className="text-xs text-muted-foreground">
+                We&apos;ll message you on Telegram 30 and 10 minutes before each interview.{" "}
+                {!user.telegramLinked &&
+                  (telegramBotUsername ? (
+                    <>
+                      Open{" "}
+                      <a
+                        href={`https://t.me/${telegramBotUsername}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        @{telegramBotUsername}
+                      </a>{" "}
+                      and tap Start to link your account.
+                    </>
+                  ) : (
+                    "Save your username here, then open our Telegram bot and tap Start to link your account."
+                  ))}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

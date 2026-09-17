@@ -21,14 +21,16 @@ enum StepKind {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String
-  phone        String?
-  role         Role
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                String   @id @default(cuid())
+  email             String   @unique
+  passwordHash      String
+  name              String
+  phone             String?
+  role              Role
+  telegramUsername  String?
+  telegramChatId    String?  @unique
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   // Manager <-> Caller relation (self relation)
   managerId String?
@@ -119,6 +121,8 @@ model Interview {
   resumeName       String?
   notes            String?
   feedback         String?
+  reminder30SentAt DateTime?
+  reminder10SentAt DateTime?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

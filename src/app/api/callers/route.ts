@@ -7,6 +7,7 @@ import { logActivity } from "@/lib/activity-log";
 import { Prisma } from "@/generated/prisma/client";
 import { DEFAULT_TIMEZONE } from "@/lib/timezones";
 import { broadcastToManagerScope } from "@/lib/socket";
+import { isValidTelegramUsername, normalizeTelegramUsername } from "@/lib/telegram";
 
 const createCallerSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
@@ -14,6 +15,7 @@ const createCallerSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
   phone: z.string().trim().optional(),
   managerId: z.string().optional(),
+  telegramUsername: z.string().trim().optional(),
 });
 
 export async function GET(req: Request) {
@@ -43,6 +45,8 @@ export async function GET(req: Request) {
       name: true,
       email: true,
       phone: true,
+      telegramUsername: true,
+      telegramChatId: true,
       createdAt: true,
       manager: { select: { id: true, name: true, email: true } },
       _count: { select: { interviewsAssigned: true } },
@@ -50,7 +54,12 @@ export async function GET(req: Request) {
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json(callers);
+  return NextResponse.json(
+    callers.map(({ telegramChatId, ...caller }) => ({
+      ...caller,
+      telegramLinked: Boolean(telegramChatId),
+    }))
+  );
 }
 
 export async function POST(req: Request) {
@@ -92,6 +101,17 @@ export async function POST(req: Request) {
     );
   }
 
+  let telegramUsername: string | null = null;
+  if (parsed.data.telegramUsername) {
+    telegramUsername = normalizeTelegramUsername(parsed.data.telegramUsername);
+    if (!isValidTelegramUsername(telegramUsername)) {
+      return NextResponse.json(
+        { error: "Enter a valid Telegram username (5-32 characters, letters/numbers/underscore)." },
+        { status: 400 }
+      );
+    }
+  }
+
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
 
   const caller = await prisma.user.create({
@@ -99,12 +119,13 @@ export async function POST(req: Request) {
       name: parsed.data.name,
       email,
       phone: parsed.data.phone || null,
+      telegramUsername,
       passwordHash,
       role: "CALLER",
       managerId,
       settings: { create: { defaultTimezone: DEFAULT_TIMEZONE } },
     },
-    select: { id: true, name: true, email: true, phone: true, createdAt: true },
+    select: { id: true, name: true, email: true, phone: true, telegramUsername: true, createdAt: true },
   });
 
   await logActivity({

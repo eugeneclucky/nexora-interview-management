@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { Plus, Mail, Phone, Trash2, Loader2, UserPlus } from "lucide-react";
+import { Plus, Mail, Phone, Send, Trash2, Loader2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
@@ -141,6 +142,16 @@ export default function ManagerCallersPage() {
                   <Phone className="h-3.5 w-3.5" /> {caller.phone}
                 </p>
               )}
+              {caller.telegramUsername && (
+                <p className="flex items-center gap-2">
+                  <Send className="h-3.5 w-3.5" /> @{caller.telegramUsername}
+                  {caller.telegramLinked ? (
+                    <Badge variant="success">Linked</Badge>
+                  ) : (
+                    <Badge variant="warning">Not linked</Badge>
+                  )}
+                </p>
+              )}
             </div>
           </Card>
         ))}
@@ -170,6 +181,7 @@ function AddCallerDialog({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [telegramUsername, setTelegramUsername] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -182,12 +194,13 @@ function AddCallerDialog({
     try {
       await apiFetch("/api/callers", {
         method: "POST",
-        body: JSON.stringify({ name, email, phone, password }),
+        body: JSON.stringify({ name, email, phone, telegramUsername, password }),
       });
       pushToast("success", `${name} added as a caller.`);
       setName("");
       setEmail("");
       setPhone("");
+      setTelegramUsername("");
       setPassword("");
       onCreated();
     } catch (err) {
@@ -222,6 +235,19 @@ function AddCallerDialog({
         <div>
           <Label htmlFor="c-phone">Phone</Label>
           <Input id="c-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        </div>
+        <div>
+          <Label htmlFor="c-telegram">Telegram username</Label>
+          <Input
+            id="c-telegram"
+            value={telegramUsername}
+            onChange={(e) => setTelegramUsername(e.target.value)}
+            placeholder="https://t.me/nexcessillion or @nexcessillion"
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            They&apos;ll get a Telegram reminder 30 and 10 minutes before each interview once
+            they message our bot.
+          </p>
         </div>
         <div>
           <Label htmlFor="c-password">Temporary password</Label>

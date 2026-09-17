@@ -1,0 +1,44 @@
+diff --git a/node_modules/react-big-calendar/lib/addons/dragAndDrop/withDragAndDrop.js b/node_modules/react-big-calendar/lib/addons/dragAndDrop/withDragAndDrop.js
+index db7b1b4..9ed69c2 100644
+--- a/node_modules/react-big-calendar/lib/addons/dragAndDrop/withDragAndDrop.js
++++ b/node_modules/react-big-calendar/lib/addons/dragAndDrop/withDragAndDrop.js
+@@ -15,6 +15,7 @@ var _getPrototypeOf2 = _interopRequireDefault(require("@babel/runtime/helpers/ge
+ var _inherits2 = _interopRequireDefault(require("@babel/runtime/helpers/inherits"));
+ var _propTypes = _interopRequireDefault(require("prop-types"));
+ var _react = _interopRequireDefault(require("react"));
++var _reactDom = _interopRequireDefault(require("react-dom"));
+ var _clsx = _interopRequireDefault(require("clsx"));
+ var _propTypes2 = require("../../utils/propTypes");
+ var _EventWrapper = _interopRequireDefault(require("./EventWrapper"));
+@@ -40,10 +41,12 @@ function withDragAndDrop(Calendar) {
+         event.preventDefault();
+       };
+       _this.handleBeginAction = function (event, action, direction) {
+-        _this.setState({
+-          event: event,
+-          action: action,
+-          direction: direction
++        _reactDom.default.flushSync(function () {
++          _this.setState({
++            event: event,
++            action: action,
++            direction: direction
++          });
+         });
+         var onDragStart = _this.props.onDragStart;
+         if (onDragStart) onDragStart({
+@@ -62,13 +65,13 @@ function withDragAndDrop(Calendar) {
+           action = _this$state.action,
+           event = _this$state.event;
+         if (!action) return;
++        if (interactionInfo == null) return;
+         _this.setState({
+           action: null,
+           event: null,
+           interacting: false,
+           direction: null
+         });
+-        if (interactionInfo == null) return;
+         interactionInfo.event = event;
+         var _this$props = _this.props,
+           onEventDrop = _this$props.onEventDrop,

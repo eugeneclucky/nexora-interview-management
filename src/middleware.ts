@@ -17,7 +17,10 @@ export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const role = req.auth?.user?.role;
 
-  const isPublicApi = pathname.startsWith("/api/auth");
+  // Telegram calls this webhook directly (no session cookie); it authenticates
+  // the request itself via the secret_token header instead.
+  const isPublicApi =
+    pathname.startsWith("/api/auth") || pathname === "/api/telegram/webhook";
   const isApi = pathname.startsWith("/api");
   const isAuthPage = pathname === "/login" || pathname === "/signup";
 

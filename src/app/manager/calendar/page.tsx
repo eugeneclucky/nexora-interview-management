@@ -55,6 +55,22 @@ export default function ManagerCalendarPage() {
     }
   }
 
+  async function moveInterview(interview: Interview, start: Date, end: Date) {
+    try {
+      await apiFetch(`/api/interviews/${interview.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          interviewTime: start.toISOString(),
+          durationMinutes: Math.round((end.getTime() - start.getTime()) / 60000),
+        }),
+      });
+      pushToast("success", "Interview rescheduled.");
+      refresh();
+    } catch (err) {
+      pushToast("error", err instanceof Error ? err.message : "Failed to move interview");
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -76,6 +92,7 @@ export default function ManagerCalendarPage() {
           onSelectBlockedSlot={setSelectedBlock}
           selectable
           onSelectSlot={(start) => setNewSlot(start)}
+          onMoveEvent={moveInterview}
         />
       </Card>
 

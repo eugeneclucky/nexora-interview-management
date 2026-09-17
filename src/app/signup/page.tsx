@@ -11,6 +11,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/logo";
 import { cn } from "@/lib/cn";
 
+const telegramBotUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
+
 export default function SignupPage() {
   const router = useRouter();
   const [role, setRole] = useState<"MANAGER" | "CALLER" | null>(null);
@@ -18,6 +20,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [telegramUsername, setTelegramUsername] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -38,7 +41,7 @@ export default function SignupPage() {
     const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, role }),
+      body: JSON.stringify({ name, email, password, role, telegramUsername }),
     });
     const data = await res.json();
 
@@ -141,6 +144,35 @@ export default function SignupPage() {
                 You&apos;ll sign up unassigned — a manager or admin will add you to their team
                 shortly after.
               </p>
+            )}
+
+            {role === "CALLER" && (
+              <div>
+                <Label htmlFor="telegram">Telegram username</Label>
+                <Input
+                  id="telegram"
+                  value={telegramUsername}
+                  onChange={(e) => setTelegramUsername(e.target.value)}
+                  placeholder="https://t.me/nexcessillion or @nexcessillion"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  We&apos;ll message you on Telegram 30 and 10 minutes before each interview.
+                  After signing up, open{" "}
+                  {telegramBotUsername ? (
+                    <a
+                      href={`https://t.me/${telegramBotUsername}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      @{telegramBotUsername}
+                    </a>
+                  ) : (
+                    "our Telegram bot"
+                  )}{" "}
+                  and tap Start so we can reach you.
+                </p>
+              </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
