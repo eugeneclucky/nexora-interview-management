@@ -41,7 +41,7 @@ const restrictedUpdateSchema = z.object({
 const includeRelations = {
   profile: true,
   manager: { select: { id: true, name: true, email: true } },
-  caller: { select: { id: true, name: true, email: true } },
+  caller: { select: { id: true, name: true, email: true, avatarUrl: true } },
   statusStep: true,
 } as const;
 

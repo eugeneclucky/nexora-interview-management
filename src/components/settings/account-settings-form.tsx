@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input, Label, Select } from "@/components/ui/input";
+import { AvatarUploader } from "@/components/avatar-uploader";
 import { useSettings } from "@/hooks/use-settings";
 import { useToast } from "@/components/providers/toast-provider";
 import { apiFetch } from "@/lib/api";
@@ -27,6 +28,7 @@ export function AccountSettingsForm({
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [telegramUsername, setTelegramUsername] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -38,6 +40,7 @@ export function AccountSettingsForm({
       setName(user.name);
       setPhone(user.phone ?? "");
       setTelegramUsername(user.telegramUsername ?? "");
+      setAvatarUrl(user.avatarUrl);
     }
   }, [settings, user]);
 
@@ -96,6 +99,16 @@ export function AccountSettingsForm({
           <CardDescription>Your account details.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {user?.role === "CALLER" && (
+            <AvatarUploader
+              avatarUrl={avatarUrl}
+              name={name || user.name}
+              onChange={(url) => {
+                setAvatarUrl(url);
+                refresh();
+              }}
+            />
+          )}
           <div>
             <Label htmlFor="name">Full name</Label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />

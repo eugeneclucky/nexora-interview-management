@@ -12,7 +12,7 @@ export type StatusStep = {
   updatedAt: string;
 };
 
-export type UserRef = { id: string; name: string; email: string };
+export type UserRef = { id: string; name: string; email: string; avatarUrl?: string | null };
 
 export type CandidateProfile = {
   id: string;
@@ -41,6 +41,7 @@ export type Caller = {
   name: string;
   email: string;
   phone: string | null;
+  avatarUrl?: string | null;
   telegramUsername?: string | null;
   telegramLinked?: boolean;
   managerId?: string | null;

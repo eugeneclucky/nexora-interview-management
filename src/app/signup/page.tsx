@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { Loader2, UserCog, Headset } from "lucide-react";
+import { Loader2, UserCog, Headset, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { Avatar } from "@/components/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/logo";
 import { cn } from "@/lib/cn";
@@ -19,8 +20,19 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [telegramUsername, setTelegramUsername] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  function handleAvatarPick(file: File) {
+    setAvatarFile(file);
+    setAvatarPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -30,36 +42,54 @@ export default function SignupPage() {
       setError("Please choose an account type.");
       return;
     }
+    if (role === "CALLER" && !avatarFile) {
+      setError("Upload a profile photo to continue.");
+      return;
+    }
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
 
     setLoading(true);
-    const res = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, role, telegramUsername }),
-    });
-    const data = await res.json();
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, role, telegramUsername }),
+      });
+      const data = await res.json();
 
-    if (!res.ok) {
+      if (!res.ok) {
+        setError(data.error || "Something went wrong.");
+        return;
+      }
+
+      const signInRes = await signIn("credentials", { email, password, redirect: false });
+      if (signInRes?.error) {
+        router.push("/login");
+        return;
+      }
+
+      if (role === "CALLER" && avatarFile) {
+        const formData = new FormData();
+        formData.append("file", avatarFile);
+        const avatarRes = await fetch("/api/avatar", { method: "POST", body: formData });
+        if (!avatarRes.ok) {
+          // The account already exists and they're signed in -- don't strand
+          // them here. Let them in and they can add the photo from Settings.
+          router.push("/");
+          router.refresh();
+          return;
+        }
+      }
+
+      const needsTelegramLink = role === "CALLER" && Boolean(process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME);
+      router.push(needsTelegramLink ? "/link-telegram" : "/");
+      router.refresh();
+    } finally {
       setLoading(false);
-      setError(data.error || "Something went wrong.");
-      return;
     }
-
-    const signInRes = await signIn("credentials", { email, password, redirect: false });
-    setLoading(false);
-
-    if (signInRes?.error) {
-      router.push("/login");
-      return;
-    }
-
-    const needsTelegramLink = role === "CALLER" && Boolean(process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME);
-    router.push(needsTelegramLink ? "/link-telegram" : "/");
-    router.refresh();
   }
 
   return (
@@ -143,6 +173,40 @@ export default function SignupPage() {
                 You&apos;ll sign up unassigned — a manager or admin will add you to their team
                 shortly after.
               </p>
+            )}
+
+            {role === "CALLER" && (
+              <div>
+                <Label>Profile photo *</Label>
+                <div className="flex items-center gap-4">
+                  <Avatar src={avatarPreview} name={name || "?"} size={64} />
+                  <div>
+                    <input
+                      ref={avatarInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleAvatarPick(file);
+                        e.target.value = "";
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => avatarInputRef.current?.click()}
+                    >
+                      <Camera className="h-3.5 w-3.5" />
+                      {avatarFile ? "Change photo" : "Upload photo"}
+                    </Button>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Required so managers and candidates recognize you. JPEG, PNG, or WebP.
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
 
             {role === "CALLER" && (

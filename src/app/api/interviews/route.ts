@@ -74,7 +74,7 @@ export async function GET(req: Request) {
     include: {
       profile: true,
       manager: { select: { id: true, name: true, email: true } },
-      caller: { select: { id: true, name: true, email: true } },
+      caller: { select: { id: true, name: true, email: true, avatarUrl: true } },
       statusStep: true,
     },
     orderBy: { interviewTime: "asc" },
@@ -164,7 +164,7 @@ export async function POST(req: Request) {
     include: {
       profile: true,
       manager: { select: { id: true, name: true, email: true } },
-      caller: { select: { id: true, name: true, email: true } },
+      caller: { select: { id: true, name: true, email: true, avatarUrl: true } },
       statusStep: true,
     },
   });

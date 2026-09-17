@@ -37,7 +37,33 @@ function guessExtension(mimeType: string) {
   if (mimeType === "application/pdf") return ".pdf";
   if (mimeType === "application/msword") return ".doc";
   if (mimeType.includes("wordprocessingml")) return ".docx";
+  if (mimeType === "image/jpeg") return ".jpg";
+  if (mimeType === "image/png") return ".png";
+  if (mimeType === "image/webp") return ".webp";
   return "";
+}
+
+export const ALLOWED_AVATAR_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+export const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+
+export async function saveAvatarFile(file: File): Promise<{ url: string }> {
+  if (!ALLOWED_AVATAR_TYPES.has(file.type)) {
+    throw new Error("Only JPEG, PNG, or WebP images are allowed for a profile photo.");
+  }
+  if (file.size > MAX_AVATAR_SIZE_BYTES) {
+    throw new Error("Profile photo must be smaller than 5MB.");
+  }
+
+  const dir = path.join(UPLOAD_ROOT, "avatars");
+  await mkdir(dir, { recursive: true });
+
+  const ext = path.extname(file.name) || guessExtension(file.type);
+  const storedName = `${randomUUID()}${ext}`;
+  const buffer = Buffer.from(await file.arrayBuffer());
+  await writeFile(path.join(dir, storedName), buffer);
+
+  return { url: `/api/files/avatars/${storedName}` };
 }
 
 export function resolveUploadPath(segments: string[]) {
