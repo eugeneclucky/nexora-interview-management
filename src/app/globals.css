@@ -134,6 +134,33 @@ body {
   font-size: 0.75rem;
   color: var(--muted-foreground);
 }
+/* Labels the time gutter's header corner with the calendar's timezone (see
+   makeGutterHeader in event-calendar.tsx). react-big-calendar sizes this
+   corner to match the actual time gutter's measured width automatically, so
+   no fixed width is set here -- just how the label itself looks inside it. */
+.time-gutter-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0.25rem 0.375rem;
+  text-align: center;
+  overflow: hidden;
+}
+.time-gutter-header-city {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.time-gutter-header-abbrev {
+  font-size: 0.62rem;
+  color: var(--muted-foreground);
+}
 /* Taller rows so a short (e.g. 30 min) event still has room to show its
    title without being clipped. react-big-calendar sizes events as a
    proportion of the day/hour-group height, so this scales event boxes up

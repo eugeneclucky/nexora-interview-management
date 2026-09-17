@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DEFAULT_TIMEZONE } from "@/lib/timezones";
+import { broadcastToUser } from "@/lib/socket";
 import {
   generateTelegramLinkCode,
   isValidTelegramUsername,
@@ -132,6 +133,8 @@ export async function PATCH(req: Request) {
       },
     });
   }
+
+  broadcastToUser(session.user.id, "settings:updated", { settings });
 
   return NextResponse.json({ settings });
 }

@@ -4,7 +4,7 @@ import { parse } from "url";
 import next from "next";
 import { Server } from "socket.io";
 import { prisma } from "@/lib/prisma";
-import { setIO, managerRoom, ADMIN_ROOM } from "@/lib/socket";
+import { setIO, managerRoom, userRoom, ADMIN_ROOM } from "@/lib/socket";
 import { startReminderScheduler } from "@/lib/reminder-scheduler";
 
 const dev = process.env.NODE_ENV !== "production";
@@ -29,6 +29,11 @@ app.prepare().then(() => {
       try {
         const user = await prisma.user.findUnique({ where: { id: userId } });
         if (!user) return;
+
+        // Lets a change only this user should see (e.g. their own settings)
+        // reach every tab/device they're signed into, separate from the
+        // team-scoped rooms below.
+        socket.join(userRoom(user.id));
 
         if (user.role === "SUPER_ADMIN") {
           socket.join(ADMIN_ROOM);

@@ -5,9 +5,28 @@ import { Calendar, dateFnsLocalizer, Views, type View, type SlotInfo } from "rea
 import withDragAndDrop, { type EventInteractionArgs } from "react-big-calendar/lib/addons/dragAndDrop";
 import { format, parse, startOfWeek, endOfWeek, getDay, isWithinInterval, isSameDay } from "date-fns";
 import { enUS } from "date-fns/locale";
-import { toZonedTime } from "date-fns-tz";
+import { toZonedTime, formatInTimeZone } from "date-fns-tz";
 import type { Interview, BlockedSlot } from "@/lib/types";
 import { calendarDateToUtc } from "@/lib/calendar-tz";
+
+function tzAbbrev(tz: string) {
+  return tz.split("/").pop()?.replace(/_/g, " ") ?? tz;
+}
+
+/** Labels the time-gutter's header corner with the calendar's timezone (city
+ * name + live GMT-relative abbreviation, e.g. "Chicago CDT") so it's always
+ * clear what timezone the hour labels below it are in. */
+function makeGutterHeader(timezone: string, date: Date) {
+  return function GutterHeader() {
+    const abbrev = formatInTimeZone(date, timezone, "zzz");
+    return (
+      <div className="time-gutter-header" title={timezone}>
+        <span className="time-gutter-header-city">{tzAbbrev(timezone)}</span>
+        <span className="time-gutter-header-abbrev">{abbrev}</span>
+      </div>
+    );
+  };
+}
 
 const locales = { "en-US": enUS };
 
@@ -212,6 +231,7 @@ export function EventCalendar({
               </div>
             );
           },
+          timeGutterHeader: makeGutterHeader(timezone, date),
         }}
       />
     </div>
