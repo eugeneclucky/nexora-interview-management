@@ -29,6 +29,7 @@ model User {
   role              Role
   telegramUsername  String?
   telegramChatId    String?  @unique
+  telegramLinkCode  String?  @unique
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -109,6 +110,7 @@ model StatusStep {
 model Interview {
   id               String   @id @default(cuid())
   eventName        String?
+  position         String?
   jobDescription   String
   companyName      String
   companyWebsite   String?

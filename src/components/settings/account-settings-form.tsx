@@ -1,17 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Send } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input, Label, Select } from "@/components/ui/input";
 import { useSettings } from "@/hooks/use-settings";
 import { useToast } from "@/components/providers/toast-provider";
 import { apiFetch } from "@/lib/api";
 import { COMMON_TIMEZONES } from "@/lib/timezones";
+import { telegramDeepLink } from "@/lib/telegram";
 
-const telegramBotUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
+const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || null;
 
 export function AccountSettingsForm({
   timezoneDescription,
@@ -144,25 +145,25 @@ export function AccountSettingsForm({
                 placeholder="https://t.me/nexcessillion or @nexcessillion"
               />
               <p className="text-xs text-muted-foreground">
-                We&apos;ll message you on Telegram 30 and 10 minutes before each interview.{" "}
-                {!user.telegramLinked &&
-                  (telegramBotUsername ? (
-                    <>
-                      Open{" "}
-                      <a
-                        href={`https://t.me/${telegramBotUsername}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        @{telegramBotUsername}
-                      </a>{" "}
-                      and tap Start to link your account.
-                    </>
-                  ) : (
-                    "Save your username here, then open our Telegram bot and tap Start to link your account."
-                  ))}
+                We&apos;ll message you on Telegram 30 and 10 minutes before each interview.
               </p>
+              {!user.telegramLinked && (
+                (() => {
+                  const deepLink = user.telegramLinkCode
+                    ? telegramDeepLink(user.telegramLinkCode, botUsername)
+                    : null;
+                  return deepLink ? (
+                    <a
+                      href={deepLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={buttonClasses({ variant: "outline", size: "sm" })}
+                    >
+                      <Send className="h-3.5 w-3.5" /> Open Telegram &amp; tap Start
+                    </a>
+                  ) : null;
+                })()
+              )}
             </div>
           )}
         </CardContent>

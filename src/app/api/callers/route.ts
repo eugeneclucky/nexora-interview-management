@@ -7,7 +7,11 @@ import { logActivity } from "@/lib/activity-log";
 import { Prisma } from "@/generated/prisma/client";
 import { DEFAULT_TIMEZONE } from "@/lib/timezones";
 import { broadcastToManagerScope } from "@/lib/socket";
-import { isValidTelegramUsername, normalizeTelegramUsername } from "@/lib/telegram";
+import {
+  generateTelegramLinkCode,
+  isValidTelegramUsername,
+  normalizeTelegramUsername,
+} from "@/lib/telegram";
 
 const createCallerSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
@@ -120,6 +124,7 @@ export async function POST(req: Request) {
       email,
       phone: parsed.data.phone || null,
       telegramUsername,
+      telegramLinkCode: generateTelegramLinkCode(),
       passwordHash,
       role: "CALLER",
       managerId,

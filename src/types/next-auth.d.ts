@@ -6,6 +6,7 @@ declare module "next-auth" {
   interface User {
     role: Role;
     managerId?: string | null;
+    telegramLinked?: boolean;
   }
 
   interface Session {
@@ -15,6 +16,7 @@ declare module "next-auth" {
       name: string;
       role: Role;
       managerId?: string | null;
+      telegramLinked?: boolean;
     };
   }
 }

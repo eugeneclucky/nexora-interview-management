@@ -22,6 +22,7 @@ type SettingsResponse = {
     role: string;
     telegramUsername: string | null;
     telegramLinked: boolean;
+    telegramLinkCode: string | null;
   };
 };
 

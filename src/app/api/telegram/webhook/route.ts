@@ -5,14 +5,17 @@ import { sendTelegramMessage } from "@/lib/telegram";
 type TelegramUpdate = {
   message?: {
     chat: { id: number };
-    from?: { username?: string };
     text?: string;
   };
 };
 
-/** Telegram calls this webhook for every message sent to the bot. We only care about
- * matching the sender's @username against a signed-up user so we can capture the
- * chat_id needed to push reminders to them later. */
+const NOT_LINKED_MESSAGE =
+  "This link looks invalid or expired. Open the Telegram link from your Nexora Consultant account (Settings, or the screen right after signup) to link your account.";
+
+/** Telegram calls this webhook for every message sent to the bot. Callers reach it by
+ * tapping our deep link (t.me/<bot>?start=<code>), which Telegram turns into a
+ * "/start <code>" message here -- we match that code to capture the chat_id needed to
+ * push reminders to them later. */
 export async function POST(req: Request) {
   const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
   if (expectedSecret) {
@@ -29,25 +32,16 @@ export async function POST(req: Request) {
   }
 
   const chatId = String(message.chat.id);
-  const username = message.from?.username;
+  const code = message.text.split(" ")[1]?.trim();
 
-  if (!username) {
-    await sendTelegramMessage(
-      chatId,
-      "You don't have a Telegram username set. Add one in Telegram settings, then enter it in your Nexora Consultant account and send /start again."
-    );
+  if (!code) {
+    await sendTelegramMessage(chatId, NOT_LINKED_MESSAGE);
     return NextResponse.json({ ok: true });
   }
 
-  const user = await prisma.user.findFirst({
-    where: { telegramUsername: { equals: username, mode: "insensitive" } },
-  });
-
+  const user = await prisma.user.findUnique({ where: { telegramLinkCode: code } });
   if (!user) {
-    await sendTelegramMessage(
-      chatId,
-      `We couldn't find a Nexora Consultant account with the Telegram username @${username}. Double-check it matches what you entered in your account settings, then send /start again.`
-    );
+    await sendTelegramMessage(chatId, NOT_LINKED_MESSAGE);
     return NextResponse.json({ ok: true });
   }
 

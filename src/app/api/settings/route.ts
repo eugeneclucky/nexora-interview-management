@@ -3,7 +3,11 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DEFAULT_TIMEZONE } from "@/lib/timezones";
-import { isValidTelegramUsername, normalizeTelegramUsername } from "@/lib/telegram";
+import {
+  generateTelegramLinkCode,
+  isValidTelegramUsername,
+  normalizeTelegramUsername,
+} from "@/lib/telegram";
 
 const settingsSchema = z.object({
   defaultTimezone: z.string().min(1).optional(),
@@ -24,7 +28,7 @@ export async function GET() {
     create: { userId: session.user.id, defaultTimezone: DEFAULT_TIMEZONE },
   });
 
-  const user = await prisma.user.findUnique({
+  let user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
       id: true,
@@ -34,8 +38,27 @@ export async function GET() {
       role: true,
       telegramUsername: true,
       telegramChatId: true,
+      telegramLinkCode: true,
     },
   });
+
+  // Backfills a link code for accounts created before this field existed.
+  if (user && user.role === "CALLER" && !user.telegramLinkCode) {
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: { telegramLinkCode: generateTelegramLinkCode() },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        telegramUsername: true,
+        telegramChatId: true,
+        telegramLinkCode: true,
+      },
+    });
+  }
 
   return NextResponse.json({
     settings,
@@ -47,6 +70,7 @@ export async function GET() {
       role: user.role,
       telegramUsername: user.telegramUsername,
       telegramLinked: Boolean(user.telegramChatId),
+      telegramLinkCode: user.telegramLinkCode,
     },
   });
 }

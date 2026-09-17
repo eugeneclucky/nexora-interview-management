@@ -52,7 +52,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       const current = await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { managerId: true },
+        select: { managerId: true, telegramChatId: true },
       });
 
       if (!current) {
@@ -60,6 +60,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       session.user.managerId = current.managerId ?? null;
+      session.user.telegramLinked = Boolean(current.telegramChatId);
       return session;
     },
   },

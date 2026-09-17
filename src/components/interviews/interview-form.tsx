@@ -16,6 +16,7 @@ export type InterviewFormValues = {
   profileId: string;
   callerId: string;
   eventName: string;
+  position: string;
   jobDescription: string;
   companyName: string;
   companyWebsite: string;
@@ -57,6 +58,7 @@ export function InterviewForm({
     profileId: string;
     callerId?: string;
     eventName?: string;
+    position: string;
     jobDescription: string;
     companyName: string;
     companyWebsite?: string;
@@ -81,6 +83,7 @@ export function InterviewForm({
     profileId: initial?.profileId ?? "",
     callerId: initial?.callerId ?? "",
     eventName: initial?.eventName ?? "",
+    position: initial?.position ?? "",
     jobDescription: initial?.jobDescription ?? "",
     companyName: initial?.companyName ?? "",
     companyWebsite: initial?.companyWebsite ?? "",
@@ -158,6 +161,7 @@ export function InterviewForm({
         // from "leave the existing caller alone" once JSON-serialized.
         callerId: values.callerId,
         eventName: values.eventName || undefined,
+        position: values.position,
         jobDescription: values.jobDescription,
         companyName: values.companyName,
         companyWebsite: values.companyWebsite || undefined,
@@ -231,6 +235,16 @@ export function InterviewForm({
 
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
+          <Label htmlFor="i-position">Position *</Label>
+          <Input
+            id="i-position"
+            required
+            value={values.position}
+            onChange={(e) => set("position", e.target.value)}
+            placeholder="e.g. Senior Software Engineer"
+          />
+        </div>
+        <div>
           <Label htmlFor="i-company">Company name *</Label>
           <Input
             id="i-company"
@@ -240,15 +254,16 @@ export function InterviewForm({
             placeholder="Acme Inc."
           />
         </div>
-        <div>
-          <Label htmlFor="i-website">Company website</Label>
-          <Input
-            id="i-website"
-            value={values.companyWebsite}
-            onChange={(e) => set("companyWebsite", e.target.value)}
-            placeholder="https://acme.com"
-          />
-        </div>
+      </div>
+
+      <div>
+        <Label htmlFor="i-website">Company website</Label>
+        <Input
+          id="i-website"
+          value={values.companyWebsite}
+          onChange={(e) => set("companyWebsite", e.target.value)}
+          placeholder="https://acme.com"
+        />
       </div>
 
       <div>

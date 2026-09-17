@@ -61,6 +61,7 @@ export type Manager = {
 export type Interview = {
   id: string;
   eventName: string | null;
+  position: string | null;
   jobDescription: string;
   companyName: string;
   companyWebsite: string | null;
