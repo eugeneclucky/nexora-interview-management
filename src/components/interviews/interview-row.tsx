@@ -31,6 +31,7 @@ export function InterviewRow({
   onStatusChange,
   onEdit,
   onDelete,
+  defaultExpanded,
 }: {
   interview: Interview;
   timezone: string;
@@ -38,8 +39,9 @@ export function InterviewRow({
   onStatusChange?: (statusStepId: string) => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  defaultExpanded?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(Boolean(defaultExpanded));
   const { steps } = useStatusSteps(interview.managerId);
   const resumeUrl = interview.resumeUrl || interview.profile.resumeUrl;
   const usingInterviewSpecificResume = Boolean(interview.resumeUrl);
@@ -73,7 +75,7 @@ export function InterviewRow({
             </p>
             <p className="text-sm text-muted-foreground truncate flex items-center gap-1">
               <Building2 className="h-3.5 w-3.5" />
-              {interview.companyName}
+              {interview.position ? `${interview.position} · ${interview.companyName}` : interview.companyName}
             </p>
           </div>
         </div>

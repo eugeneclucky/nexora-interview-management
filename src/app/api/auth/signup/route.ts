@@ -4,7 +4,11 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { DEFAULT_TIMEZONE } from "@/lib/timezones";
 import { defaultStatusStepsData } from "@/lib/status-steps";
-import { isValidTelegramUsername, normalizeTelegramUsername } from "@/lib/telegram";
+import {
+  generateTelegramLinkCode,
+  isValidTelegramUsername,
+  normalizeTelegramUsername,
+} from "@/lib/telegram";
 
 const signupSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
@@ -57,6 +61,7 @@ export async function POST(req: Request) {
       passwordHash,
       role,
       telegramUsername,
+      telegramLinkCode: role === "CALLER" ? generateTelegramLinkCode() : null,
       settings: {
         create: { defaultTimezone: DEFAULT_TIMEZONE },
       },

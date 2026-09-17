@@ -50,6 +50,9 @@ export default auth((req) => {
     if (pathname.startsWith("/admin") && role !== "SUPER_ADMIN") {
       return NextResponse.redirect(new URL(homeForRole(role), nextUrl));
     }
+    if (pathname === "/link-telegram" && role !== "CALLER") {
+      return NextResponse.redirect(new URL(homeForRole(role), nextUrl));
+    }
     if (pathname === "/") {
       return NextResponse.redirect(new URL(homeForRole(role), nextUrl));
     }

@@ -109,12 +109,21 @@ curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
 
 ### How linking works
 
-A caller enters their Telegram `@username` in the signup form or Settings.
-Telegram never lets a bot message a user first, so the caller must also open
-the bot (`https://t.me/<TELEGRAM_BOT_USERNAME>`) and send `/start`. The
-webhook matches the sender's username against the account and stores its
-chat ID; Settings then shows a **Linked** badge. Reminders only go out to
-callers who have completed this step.
+Telegram never lets a bot message a user first, so every caller account gets
+a unique link code and must open a one-tap deep link
+(`https://t.me/<TELEGRAM_BOT_USERNAME>?start=<code>`) to connect it — no
+typing required, and it doesn't depend on matching a username (which can
+change or be mistyped). The webhook reads that code from the `/start`
+message, stores the resulting chat ID, and the caller is linked.
+
+**This is enforced, not optional**: right after signup (and on every login
+until they link), a caller is redirected to `/link-telegram` and can't reach
+the rest of the app until linking completes — that page polls in the
+background and forwards them automatically once it detects the link. This
+gate only activates once `TELEGRAM_BOT_USERNAME` is actually configured, so
+it can't lock callers out in an environment where the bot hasn't been set up
+yet. The optional Telegram username field at signup / in Settings is just a
+display label for managers — it plays no role in linking.
 
 ## Production (self-hosted)
 

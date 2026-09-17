@@ -11,8 +11,6 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/logo";
 import { cn } from "@/lib/cn";
 
-const telegramBotUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
-
 export default function SignupPage() {
   const router = useRouter();
   const [role, setRole] = useState<"MANAGER" | "CALLER" | null>(null);
@@ -59,7 +57,8 @@ export default function SignupPage() {
       return;
     }
 
-    router.push("/");
+    const needsTelegramLink = role === "CALLER" && Boolean(process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME);
+    router.push(needsTelegramLink ? "/link-telegram" : "/");
     router.refresh();
   }
 
@@ -157,20 +156,7 @@ export default function SignupPage() {
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
                   We&apos;ll message you on Telegram 30 and 10 minutes before each interview.
-                  After signing up, open{" "}
-                  {telegramBotUsername ? (
-                    <a
-                      href={`https://t.me/${telegramBotUsername}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      @{telegramBotUsername}
-                    </a>
-                  ) : (
-                    "our Telegram bot"
-                  )}{" "}
-                  and tap Start so we can reach you.
+                  Right after you sign up, we&apos;ll show you a one-tap link to connect it.
                 </p>
               </div>
             )}
