@@ -11,6 +11,7 @@ import {
   MapPin,
   Cake,
   ShieldCheck,
+  User,
   ChevronDown,
   ChevronUp,
   ExternalLink,
@@ -139,6 +140,9 @@ export function InterviewRow({
           <div className="space-y-2">
             <p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
               Candidate
+            </p>
+            <p className="flex items-center gap-2 font-medium">
+              <User className="h-3.5 w-3.5 text-muted-foreground" /> {interview.profile.name}
             </p>
             {interview.profile.email && (
               <p className="flex items-center gap-2">
