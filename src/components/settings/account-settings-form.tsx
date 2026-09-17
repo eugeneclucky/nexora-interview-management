@@ -5,12 +5,12 @@ import { Loader2, Save, Send } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input, Label, Select } from "@/components/ui/input";
+import { Input, Label } from "@/components/ui/input";
 import { AvatarUploader } from "@/components/avatar-uploader";
+import { TimezoneSelect } from "@/components/timezone-select";
 import { useSettings } from "@/hooks/use-settings";
 import { useToast } from "@/components/providers/toast-provider";
 import { apiFetch } from "@/lib/api";
-import { COMMON_TIMEZONES } from "@/lib/timezones";
 import { telegramDeepLink } from "@/lib/telegram";
 
 const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || null;
@@ -82,13 +82,7 @@ export function AccountSettingsForm({
         <CardContent className="space-y-4">
           <div>
             <Label htmlFor="tz">Timezone</Label>
-            <Select id="tz" value={timezone} onChange={(e) => setTimezone(e.target.value)}>
-              {COMMON_TIMEZONES.map((tz) => (
-                <option key={tz.value} value={tz.value}>
-                  {tz.label}
-                </option>
-              ))}
-            </Select>
+            <TimezoneSelect id="tz" value={timezone} onChange={setTimezone} />
           </div>
         </CardContent>
       </Card>
