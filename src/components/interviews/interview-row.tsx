@@ -8,6 +8,9 @@ import {
   FileText,
   Mail,
   Phone,
+  MapPin,
+  Cake,
+  ShieldCheck,
   ChevronDown,
   ChevronUp,
   ExternalLink,
@@ -147,6 +150,30 @@ export function InterviewRow({
                 <Phone className="h-3.5 w-3.5 text-muted-foreground" /> {interview.profile.phone}
               </p>
             )}
+            {(interview.profile.address || interview.profile.city || interview.profile.state) && (
+              <p className="flex items-center gap-2 text-muted-foreground">
+                <MapPin className="h-3.5 w-3.5" />
+                {[
+                  interview.profile.address,
+                  interview.profile.city,
+                  interview.profile.state,
+                  interview.profile.zip,
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
+              </p>
+            )}
+            {interview.profile.dob && (
+              <p className="flex items-center gap-2 text-muted-foreground">
+                <Cake className="h-3.5 w-3.5" /> DOB:{" "}
+                {formatInTz(interview.profile.dob, "UTC", "MMM d, yyyy")}
+              </p>
+            )}
+            {interview.profile.ssnLast4 && (
+              <p className="flex items-center gap-2 text-muted-foreground">
+                <ShieldCheck className="h-3.5 w-3.5" /> SSN: •••-••-{interview.profile.ssnLast4}
+              </p>
+            )}
             {interview.profile.linkedinUrl && (
               <a
                 href={interview.profile.linkedinUrl}
@@ -201,10 +228,10 @@ export function InterviewRow({
               </a>
             )}
             {interview.caller && (
-              <p className="flex items-center gap-2 text-muted-foreground">
+              <div className="flex items-center gap-2 text-muted-foreground">
                 <Avatar src={interview.caller.avatarUrl} name={interview.caller.name} size={18} className="text-[9px]" />
                 Caller: {interview.caller.name}
-              </p>
+              </div>
             )}
           </div>
 
@@ -236,6 +263,15 @@ export function InterviewRow({
                   {jdExpanded ? "Show less" : "Show more"}
                 </button>
               )}
+            </div>
+          )}
+
+          {interview.notes && (
+            <div className="sm:col-span-2">
+              <p className="font-medium text-muted-foreground text-xs uppercase tracking-wide mb-1">
+                Notes
+              </p>
+              <p className="whitespace-pre-wrap text-foreground/90">{interview.notes}</p>
             </div>
           )}
 
