@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
+import { Avatar } from "@/components/avatar";
 import { useCallers } from "@/hooks/use-callers";
 import { useToast } from "@/components/providers/toast-provider";
 import { apiFetch } from "@/lib/api";
@@ -106,9 +107,7 @@ export default function ManagerCallersPage() {
           <Card key={caller.id} className="p-5 flex flex-col gap-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground font-semibold">
-                  {caller.name.slice(0, 1).toUpperCase()}
-                </div>
+                <Avatar src={caller.avatarUrl} name={caller.name} size={40} />
                 <div className="min-w-0">
                   <p className="font-medium truncate">{caller.name}</p>
                   <p className="text-xs text-muted-foreground truncate">

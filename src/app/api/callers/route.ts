@@ -49,6 +49,7 @@ export async function GET(req: Request) {
       name: true,
       email: true,
       phone: true,
+      avatarUrl: true,
       telegramUsername: true,
       telegramChatId: true,
       createdAt: true,

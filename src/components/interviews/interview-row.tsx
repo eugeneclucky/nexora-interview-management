@@ -6,7 +6,6 @@ import {
   Globe,
   Video,
   FileText,
-  User,
   Mail,
   Phone,
   ChevronDown,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import { Badge, stepVariant } from "@/components/ui/badge";
 import { Select } from "@/components/ui/input";
+import { Avatar } from "@/components/avatar";
 import { formatInTz } from "@/lib/format-time";
 import { isCompletionStep } from "@/lib/step-helpers";
 import { useStatusSteps } from "@/hooks/use-status-steps";
@@ -42,6 +42,9 @@ export function InterviewRow({
   defaultExpanded?: boolean;
 }) {
   const [expanded, setExpanded] = useState(Boolean(defaultExpanded));
+  const [jdExpanded, setJdExpanded] = useState(false);
+  const JD_COLLAPSE_THRESHOLD = 320;
+  const jdIsLong = interview.jobDescription.length > JD_COLLAPSE_THRESHOLD;
   const { steps } = useStatusSteps(interview.managerId);
   const resumeUrl = interview.resumeUrl || interview.profile.resumeUrl;
   const usingInterviewSpecificResume = Boolean(interview.resumeUrl);
@@ -199,7 +202,8 @@ export function InterviewRow({
             )}
             {interview.caller && (
               <p className="flex items-center gap-2 text-muted-foreground">
-                <User className="h-3.5 w-3.5" /> Caller: {interview.caller.name}
+                <Avatar src={interview.caller.avatarUrl} name={interview.caller.name} size={18} className="text-[9px]" />
+                Caller: {interview.caller.name}
               </p>
             )}
           </div>
@@ -209,7 +213,29 @@ export function InterviewRow({
               <p className="font-medium text-muted-foreground text-xs uppercase tracking-wide mb-1">
                 Job description
               </p>
-              <p className="whitespace-pre-wrap text-foreground/90">{interview.jobDescription}</p>
+              <div
+                className={cn(
+                  "relative whitespace-pre-wrap text-foreground/90",
+                  jdIsLong && !jdExpanded && "max-h-32 overflow-hidden"
+                )}
+              >
+                {interview.jobDescription}
+                {jdIsLong && !jdExpanded && (
+                  <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-card to-transparent" />
+                )}
+              </div>
+              {jdIsLong && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setJdExpanded((v) => !v);
+                  }}
+                  className="mt-1 text-xs font-medium text-primary hover:underline cursor-pointer"
+                >
+                  {jdExpanded ? "Show less" : "Show more"}
+                </button>
+              )}
             </div>
           )}
 

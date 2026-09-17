@@ -26,6 +26,7 @@ model User {
   passwordHash      String
   name              String
   phone             String?
+  avatarUrl         String?
   role              Role
   telegramUsername  String?
   telegramChatId    String?  @unique
